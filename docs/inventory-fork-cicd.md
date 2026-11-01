@@ -59,9 +59,16 @@ pode ser público após conferir que a imagem contém apenas a aplicação, sem
 credenciais. A imagem é construída com o Dockerfile de Inventory, copiando
 somente POM, fontes e JAR; variáveis reais ficam no Render.
 
+Antes do primeiro deploy pelo fork, ajustar Image → Source dos dois serviços
+Render para uma tag já publicada em `ghcr.io/danielhoepers/trabalho-devops-inventory`.
+A API de deploy exige o mesmo host/repositório/nome de imagem configurados no
+serviço. A troca da origem pela interface também inicia uma implantação.
+
 O job deploy passa o digest imutável à API Render, acompanha o ID específico
 do deploy até live e verifica prontidão, JWT, token interno, proteção de métricas
 e Swagger. Ele não movimenta estoque e não faz rollback automático.
+`/docs` é verificado com `Accept: text/html`; `/docs-json` com
+`Accept: application/json`. Os testes impedem solicitar JSON à interface HTML.
 
 ## Validação e evidências
 

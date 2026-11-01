@@ -45,10 +45,22 @@ class DeploymentTest(unittest.TestCase):
                 self.assertEqual({}, kwargs.get('payload'))
                 return internal_status, b''
             if url.endswith('/docs') or url.endswith('/docs-json'):
+                expected_accept = 'text/html' if url.endswith('/docs') else 'application/json'
+                self.assertEqual(expected_accept, kwargs.get('accept'))
                 status = 200 if environment == 'dev' else 404
                 return (200 if swagger_wrong else status), b''
             return 401, b''
         return respond
+
+    @patch.object(deploy.urllib.request, 'urlopen')
+    def test_http_request_preserves_html_accept_header(self, urlopen):
+        response = urlopen.return_value.__enter__.return_value
+        response.status = 200
+        response.read.return_value = b'<html>Swagger</html>'
+        self.assertEqual((200, b'<html>Swagger</html>'), deploy.request(
+            'https://inventory.example/docs', accept='text/html'
+        ))
+        self.assertEqual('text/html', urlopen.call_args.args[0].get_header('Accept'))
 
     def test_dev_and_homol_public_contracts(self):
         for environment in ('dev', 'homol'):

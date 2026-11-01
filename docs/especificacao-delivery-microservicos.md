@@ -1,7 +1,7 @@
 # Especificação do Sistema de Delivery com Microsserviços
 
 **Status:** especificação de referência para implementação
-**Versão:** 2.16
+**Versão:** 2.17
 **Última atualização:** 2026-11-01
 **Idioma:** português
 **Objetivo:** orientar a construção, execução e validação de um sistema simples de delivery com foco em DevOps.
@@ -10,6 +10,7 @@
 
 | Versão | Data | Alteração |
 |---|---|---|
+| 2.17 | 2026-11-01 | Corrigida negociação HTTP do verificador de deploy: /docs solicita HTML e /docs-json solicita JSON; validações por ambiente preservadas |
 | 2.16 | 2026-11-01 | Preparado CI/CD do Inventory no fork com Environments próprios; imagem OCI identifica repositório, commit e versão; configurações administrativas não são transferidas por PR |
 | 2.15 | 2026-10-31 | Alinhado Inventory ao enunciado T2: develop/DEV e main/HOMOL; homolog deixa de acionar o workflow; monitoramento ainda preparado e CD depende de configuração externa |
 | 2.14 | 2026-10-31 | CI do Inventory separa develop/DEV, homolog/HOMOL e main/versão aprovada; main não publica nem implanta; deploy condicionado à habilitação futura por Variable |
@@ -1559,6 +1560,9 @@ fica pulado para tratar a hospedagem em uma etapa posterior. PRs de forks
 executam os testes sem acesso aos secrets e não são considerados evidência de
 Sonar aprovado. O CD consulta o deploy específico na API Render até `live` e
 verifica readiness, JWT, token interno, métricas e Swagger na URL pública.
+O verificador solicita `Accept: text/html` para `/docs` e
+`Accept: application/json` para `/docs-json`, preservando os códigos esperados
+por ambiente; pedir JSON à interface HTML não valida sua disponibilidade.
 Os identificadores `INVENTORY_SONAR_ORGANIZATION` e
 `INVENTORY_SONAR_PROJECT_KEY` são lidos de Variables ou, quando vazias,
 de Secrets do repositório. `INVENTORY_SONAR_TOKEN` permanece somente em Secrets.

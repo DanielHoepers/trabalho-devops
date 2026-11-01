@@ -1,8 +1,8 @@
 # Especificação do Sistema de Delivery com Microsserviços
 
 **Status:** especificação de referência para implementação
-**Versão:** 2.15
-**Última atualização:** 2026-10-31
+**Versão:** 2.16
+**Última atualização:** 2026-11-01
 **Idioma:** português
 **Objetivo:** orientar a construção, execução e validação de um sistema simples de delivery com foco em DevOps.
 
@@ -10,6 +10,7 @@
 
 | Versão | Data | Alteração |
 |---|---|---|
+| 2.16 | 2026-11-01 | Preparado CI/CD do Inventory no fork com Environments próprios; imagem OCI identifica repositório, commit e versão; configurações administrativas não são transferidas por PR |
 | 2.15 | 2026-10-31 | Alinhado Inventory ao enunciado T2: develop/DEV e main/HOMOL; homolog deixa de acionar o workflow; monitoramento ainda preparado e CD depende de configuração externa |
 | 2.14 | 2026-10-31 | CI do Inventory separa develop/DEV, homolog/HOMOL e main/versão aprovada; main não publica nem implanta; deploy condicionado à habilitação futura por Variable |
 | 2.13 | 2026-10-28 | Somente Estoque cloud: Spring público no Render sem Nginx dedicado; rotas acessíveis diretamente preservando JWT, token interno e métricas; CD de uma imagem; Compose e demais serviços preservados |
@@ -1573,6 +1574,12 @@ somente a imagem Spring; não exige imagem ou ID de serviço de gateway.
 Pedidos poderá usar a origem HTTPS do Inventory, mediante configuração pelo
 responsável desse serviço. Nenhum outro microsserviço é modificado.
 A configuração cloud é adicional e não altera o Compose/gateway local.
+A execução pelo fork usa nome de imagem derivado de `github.repository`,
+com labels OCI de origem, revisão e versão. Environments, Variables e Secrets
+são configurados separadamente em cada repositório e não são transferidos
+por Pull Request. O fork reutiliza os serviços Inventory DEV/HOMOL autorizados;
+a ativação do CD depende da configuração e validação do próprio fork.
+Instruções: [CI/CD no fork](inventory-fork-cicd.md).
 DEV e HOMOL usam quatro bancos lógicos (write/read por ambiente) e mensageria
 separada por vhost/instância. Na implantação atual, o usuário optou pela mesma
 credencial PostgreSQL nos dois ambientes; isso separa os dados por banco,

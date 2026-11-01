@@ -3,6 +3,8 @@
 O estoque permanece em `services/inventory` neste monorepo. O workflow é
 `.github/workflows/inventory.yml`; os demais microsserviços não foram alterados.
 
+Para executar no fork sob administração própria, consulte [CI/CD do Inventory no fork](inventory-fork-cicd.md).
+
 ## Estado da entrega
 
 A lista abaixo distingue arquivos preparados de etapas validadas remotamente.
@@ -183,7 +185,12 @@ para publicar no CI. A imagem Linux amd64 usa contexto Docker da raiz.
 
 Imagens resultantes neste repositório:
 
-- `ghcr.io/guilhermeschr/trabalho-devops-inventory`
+- `ghcr.io/guilhermeschr/trabalho-devops-inventory` no original.
+- `ghcr.io/danielhoepers/trabalho-devops-inventory` no fork.
+
+O workflow calcula esse endereço a partir de `github.repository`. Labels OCI
+registram a URL do repositório, o SHA e a versão do POM; a imagem do fork fica
+identificada com sua própria origem, sem hardcode de conta no workflow.
 
 Por padrão o pacote pode ser privado. Para o Render conseguir baixá-lo,
 configure uma credencial do registro com `read:packages`, ou torne o pacote

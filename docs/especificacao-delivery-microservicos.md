@@ -1,8 +1,8 @@
 # Especificação do Sistema de Delivery com Microsserviços
 
 **Status:** especificação de referência para implementação
-**Versão:** 2.17
-**Última atualização:** 2026-11-01
+**Versão:** 2.18
+**Última atualização:** 2026-11-02
 **Idioma:** português
 **Objetivo:** orientar a construção, execução e validação de um sistema simples de delivery com foco em DevOps.
 
@@ -10,6 +10,7 @@
 
 | Versão | Data | Alteração |
 |---|---|---|
+| 2.18 | 2026-11-02 | Migrada configuração de publicação do Inventory para Docker Hub; credencial própria em Secrets, usuário em Variables e deploy restrito a digest docker.io; aplicação e demais serviços preservados |
 | 2.17 | 2026-11-01 | Corrigida negociação HTTP do verificador de deploy: /docs solicita HTML e /docs-json solicita JSON; validações por ambiente preservadas |
 | 2.16 | 2026-11-01 | Preparado CI/CD do Inventory no fork com Environments próprios; imagem OCI identifica repositório, commit e versão; configurações administrativas não são transferidas por PR |
 | 2.15 | 2026-10-31 | Alinhado Inventory ao enunciado T2: develop/DEV e main/HOMOL; homolog deixa de acionar o workflow; monitoramento ainda preparado e CD depende de configuração externa |
@@ -1552,7 +1553,7 @@ histogramas HTTP. Nenhum detalhe de saúde é exposto.
 
 O workflow `.github/workflows/inventory.yml` executa verify com Java 21,
 SonarCloud com Quality Gate, build Docker e publicação exclusiva do estoque
-no GHCR; somente pushes em develop/main publicam imagens. Tags usam
+no Docker Hub; somente pushes em develop/main publicam imagens. Tags usam
 `X.Y.Z-dev-<sha>` e `X.Y.Z-homol-<sha>`. O deploy por digest mapeia develop
 para Environment DEV e main para HOMOL, condicionado também à Variable de
 repositório `INVENTORY_DEPLOY_ENABLED=true`. Sem essa habilitação, o deploy
@@ -1578,8 +1579,13 @@ somente a imagem Spring; não exige imagem ou ID de serviço de gateway.
 Pedidos poderá usar a origem HTTPS do Inventory, mediante configuração pelo
 responsável desse serviço. Nenhum outro microsserviço é modificado.
 A configuração cloud é adicional e não altera o Compose/gateway local.
-A execução pelo fork usa nome de imagem derivado de `github.repository`,
-com labels OCI de origem, revisão e versão. Environments, Variables e Secrets
+A imagem usa `docker.io/<INVENTORY_DOCKERHUB_USERNAME>/<repositorio>-inventory`,
+com o nome do repositório derivado de `github.repository` e labels OCI de origem,
+revisão e versão. O usuário Docker fica na Variable `INVENTORY_DOCKERHUB_USERNAME`
+e o token de publicação no Secret `INVENTORY_DOCKERHUB_TOKEN`. O deploy exige
+digest Docker Hub e origem compatível configurada no Render. A migração preserva
+as imagens históricas GHCR e só habilita o CD após conferir ambas as origens.
+Environments, Variables e Secrets
 são configurados separadamente em cada repositório e não são transferidos
 por Pull Request. O fork reutiliza os serviços Inventory DEV/HOMOL autorizados;
 a ativação do CD depende da configuração e validação do próprio fork.

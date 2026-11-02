@@ -12,7 +12,7 @@ e sua documentação/configuração DevOps pertencem a esta alteração.
 O workflow exclusivo `.github/workflows/inventory.yml` compila com Java 21,
 executa Maven verify com JUnit/Testcontainers/JaCoCo, os testes do controle
 de deploy, o Sonar com Quality Gate e o build Docker. Pushes em develop/main
-publicam `ghcr.io/danielhoepers/trabalho-devops-inventory` com tags SemVer,
+publicam `docker.io/d2gtrabalhos/trabalho-devops-inventory` com tags SemVer,
 ambiente e SHA. Labels OCI identificam repositório, commit e versão.
 
 Features e PRs não publicam imagens nem implantam. O botão Run workflow valida
@@ -41,6 +41,7 @@ Variables de repositório:
 |---|---|
 | INVENTORY_SONAR_ORGANIZATION | danielhoepers-devops |
 | INVENTORY_SONAR_PROJECT_KEY | danielhoepers-devops_inventory-fork |
+| INVENTORY_DOCKERHUB_USERNAME | d2gtrabalhos |
 | INVENTORY_DEPLOY_ENABLED | false durante preparação; true somente após conferir as configurações |
 
 O Secret de repositório `INVENTORY_SONAR_TOKEN` contém o token do novo projeto.
@@ -52,15 +53,16 @@ do vencimento, atualizando somente o Secret. Nenhum token integra este documento
 
 ## Publicação e deploy
 
-O GITHUB_TOKEN do próprio job publica a imagem; não é necessário um PAT GHCR.
-Verifique a visibilidade do novo pacote: a publicação inicial pode ser privada.
-O Render precisa conseguir baixar a imagem; para este projeto público, o pacote
-pode ser público após conferir que a imagem contém apenas a aplicação, sem
-credenciais. A imagem é construída com o Dockerfile de Inventory, copiando
-somente POM, fontes e JAR; variáveis reais ficam no Render.
+O job publica no Docker Hub com a Variable `INVENTORY_DOCKERHUB_USERNAME`
+e o Secret de repositório `INVENTORY_DOCKERHUB_TOKEN` (token com leitura/escrita,
+sem exclusão). O GITHUB_TOKEN não autentica a publicação no Docker Hub.
+O repositório de imagem é público; o Render pode baixar a imagem sem credencial
+adicional de registro. A imagem copia somente POM, fontes e JAR; variáveis reais
+ficam no Render. O Dockerfile e a aplicação não mudam com a troca de registro.
+Veja [migração para Docker Hub](inventory-dockerhub.md).
 
 Antes do primeiro deploy pelo fork, ajustar Image → Source dos dois serviços
-Render para uma tag já publicada em `ghcr.io/danielhoepers/trabalho-devops-inventory`.
+Render para uma tag já publicada em `docker.io/d2gtrabalhos/trabalho-devops-inventory`.
 A API de deploy exige o mesmo host/repositório/nome de imagem configurados no
 serviço. A troca da origem pela interface também inicia uma implantação.
 
@@ -92,7 +94,8 @@ não foi calculado. Confirmar a causa e reexecutar a análise; não ignorar gate
 
 Depois da validação, enviar somente as alterações dos arquivos por PR. O dono
 do original precisa cadastrar seus próprios Environments, Variables e Secrets.
-Essas configurações não são transferidas pelo PR. O cálculo dinâmico da imagem
-faz o original continuar publicando no namespace do original após a integração.
+Essas configurações não são transferidas pelo PR. O original precisa definir
+seu próprio usuário Docker e token e alinhar a origem da imagem no Render;
+o nome do repositório compõe o nome da imagem.
 Mantenha o CD ativo em somente um repositório para esses serviços até combinar
 a migração, evitando que original e fork substituam o mesmo serviço em paralelo.

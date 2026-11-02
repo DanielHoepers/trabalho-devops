@@ -75,8 +75,9 @@ gratuitas exclusivas de Produtos (uma por ambiente), cada uma com seu usuário
 e vhost fornecidos pelo provedor. Não compartilhar credenciais ou filas do
 Inventory e não aumentar o plano para contornar essa limitação.
 [Limites oficiais do CloudAMQP](https://www.cloudamqp.com/docs/faq/).
-O login da conta CloudAMQP está pendente da autorização específica solicitada
-no chat. A chave API Render própria do CD já foi criada e cadastrada no GitHub.
+Duas instâncias próprias Little Lemur foram criadas na conta d2gtrabalhos,
+em Northern Virginia: products-dev e products-homol. AMQPS, publicação e consumo
+foram validados em ambas. A chave API Render própria do CD está no GitHub.
 
 Variáveis de runtime: APP_ENV, NODE_ENV, SWAGGER_ENABLED, JWT_SECRET,
 INTERNAL_SERVICE_TOKEN, METRICS_TOKEN, PRODUCTS_DB_SSL,
@@ -174,3 +175,25 @@ coleta de métricas dos ambientes cloud.
 - Consulta à API confirmou Inventory DEV/HOMOL como serviços image-backed,
   sem repositório conectado; nenhuma configuração de Inventory foi alterada.
 - Nenhum deploy de Produtos iniciado nesta etapa; mensageria própria pendente.
+
+
+## Provisionamento cloud em 02/11/2026
+
+| Ambiente | Serviço Render | URL pública | RabbitMQ |
+|---|---|---|---|
+| DEV | srv-dbkh38qjnfac73c1o8b0 | https://products-dev-4e3e.onrender.com | products-dev (Little Lemur gratuito) |
+| HOMOL | srv-dbkh4anf3r2c73cftks0 | https://products-homol.onrender.com | products-homol (Little Lemur gratuito) |
+
+- Ambos os serviços: imagem por digest, plano free, autoDeploy=no, repo/branch
+  ausentes e health check /health. Nenhuma configuração Inventory alterada.
+- Bootstrap com a imagem aprovada 0.2.0-dev.3, commit e65fd94, nos dois serviços;
+  a identidade declara corretamente dev/homol. A release estável de HOMOL ainda
+  depende da promoção e execução do CD; o bootstrap não a substitui.
+- DEV validado: health, Swagger UI/JSON, 401 sem JWT/métricas, 403 sem token
+  interno, criação autenticada, projeção CQRS, consulta interna e métricas.
+- HOMOL validado: Swagger UI/JSON 404, health, versão, proteções HTTP, criação,
+  projeção CQRS e consulta interna autenticada.
+- IDs e URLs cadastrados nos respectivos Environments; PRODUCTS_DEPLOY_ENABLED
+  habilitado. A execução real do job de CD ainda precisa ser comprovada.
+- Instâncias RabbitMQ usam usuários/vhosts distintos; teste AMQPS publicou e
+  consumiu mensagem em fila temporária exclusiva, removida ao fechar conexão.

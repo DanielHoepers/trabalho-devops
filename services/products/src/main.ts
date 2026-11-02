@@ -1,3 +1,4 @@
+import { resolvePort, validateCloudConfig } from './operations/runtime-config';
 import 'reflect-metadata';
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -7,6 +8,7 @@ import { HttpErrorFilter } from './common/http-error.filter';
 import { setupSwagger } from './common/swagger/swagger.setup';
 
 async function bootstrap(): Promise<void> {
+  validateCloudConfig(process.env);
   const app = await NestFactory.create(AppModule);
 
   app.useGlobalPipes(
@@ -19,7 +21,7 @@ async function bootstrap(): Promise<void> {
   app.useGlobalFilters(new HttpErrorFilter());
   setupSwagger(app, app.get(ConfigService));
 
-  const port = Number(process.env.PRODUCTS_PORT ?? 3000);
+  const port = resolvePort(process.env);
   await app.listen(port, '0.0.0.0');
 }
 

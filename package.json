@@ -9,7 +9,7 @@
     "services/orders"
   ],
   "scripts": {
-    "build:products": "npm --workspace services/products run build",
+    "build:products": "npm --workspace services/products run build && node scripts/products-build-info.mjs",
     "dev:products": "npm --workspace services/products run start:dev",
     "typecheck": "npm run typecheck --workspaces",
     "test:products": "npm --workspace services/products run test:cov --",

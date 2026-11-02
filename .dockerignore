@@ -18,3 +18,7 @@ services/inventory/target
 monitoring/inventory/targets
 .vscode
 **/__pycache__
+
+monitoring/products/targets
+.superpowers
+.idea

@@ -1,0 +1,164 @@
+name: Products
+on:
+  push:
+    branches: [main, develop, 'feature/**']
+    paths: ['services/products/**', 'package.json', 'package-lock.json', 'tsconfig.base.json', 'services/auth/package.json', 'services/orders/package.json', '.github/workflows/products.yml', '.github/dependabot.yml', 'scripts/*products*', 'scripts/test_products_release.py', 'monitoring/products/**', 'infra/nginx/nginx.conf']
+  pull_request:
+    branches: [main, develop]
+    paths: ['services/products/**', 'package.json', 'package-lock.json', 'tsconfig.base.json', 'services/auth/package.json', 'services/orders/package.json', '.github/workflows/products.yml', '.github/dependabot.yml', 'scripts/*products*', 'scripts/test_products_release.py', 'monitoring/products/**', 'infra/nginx/nginx.conf']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: products-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npm --workspace services/products run typecheck
+      - run: npm run test:products
+      - run: npm run build:products
+      - run: python3 -m unittest discover -s scripts -p '*products*.py'
+      - name: Contrato Swagger HTTP
+        run: |
+          node scripts/products-contract-server.cjs > /tmp/products-contract.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for _attempt in $(seq 1 30); do
+            if curl -fsS http://localhost:3100/docs-json > /dev/null; then break; fi
+            sleep 1
+          done
+          SWAGGER_BASE_URL=http://localhost:3100 npm run verify:swagger:products
+      - name: Validar monitoramento
+        run: |
+          mkdir -p monitoring/products/.secrets
+          printf 'ci-fixture' > monitoring/products/.secrets/dev_metrics_token
+          printf 'ci-fixture' > monitoring/products/.secrets/homol_metrics_token
+          PRODUCTS_DEV_URL=https://dev.example PRODUCTS_HOMOL_URL=https://homol.example python3 monitoring/products/configure.py
+          docker run --rm --entrypoint promtool -v "$PWD/monitoring/products:/etc/prometheus:ro" -v "$PWD/monitoring/products/.secrets:/run/secrets:ro" prom/prometheus:v3.5.0 check config /etc/prometheus/prometheus.yml
+      - name: SonarQube Cloud e Quality Gate
+        if: github.event_name != 'pull_request' || (github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]')
+        uses: SonarSource/sonarqube-scan-action@v7
+        env:
+          SONAR_TOKEN: ${{ secrets.PRODUCTS_SONAR_TOKEN }}
+        with:
+          projectBaseDir: services/products
+          args: >-
+            -Dsonar.host.url=https://sonarcloud.io
+            -Dsonar.organization=${{ vars.PRODUCTS_SONAR_ORGANIZATION }}
+            -Dsonar.projectKey=${{ vars.PRODUCTS_SONAR_PROJECT_KEY }}
+            -Dsonar.qualitygate.wait=true
+            -Dsonar.qualitygate.timeout=600
+      - name: Validar imagem sem publicar
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: services/products/Dockerfile
+          push: false
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: products-coverage
+          path: services/products/coverage/
+  image:
+    needs: quality
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: write
+    outputs:
+      image: ${{ steps.names.outputs.image }}
+      version: ${{ steps.names.outputs.version }}
+      digest: ${{ steps.result.outputs.digest }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Identificar release e verificar imagem existente
+        id: names
+        env:
+          BRANCH: ${{ github.ref_name }}
+          SHA: ${{ github.sha }}
+          RUN_NUMBER: ${{ github.run_number }}
+        run: python3 scripts/products-release.py
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        if: steps.names.outputs.digest == ''
+        with:
+          username: ${{ vars.PRODUCTS_DOCKERHUB_USERNAME }}
+          password: ${{ secrets.PRODUCTS_DOCKERHUB_TOKEN }}
+      - name: Publicar imagem aprovada
+        id: build
+        if: steps.names.outputs.digest == ''
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: services/products/Dockerfile
+          platforms: linux/amd64
+          provenance: false
+          push: true
+          tags: |
+            ${{ steps.names.outputs.image }}:${{ steps.names.outputs.version }}
+            ${{ steps.names.outputs.image }}:sha-${{ github.sha }}-${{ steps.names.outputs.version }}
+          build-args: |
+            BUILD_VERSION=${{ steps.names.outputs.version }}
+            BUILD_COMMIT=${{ github.sha }}
+          cache-from: type=gha,scope=products
+          cache-to: type=gha,mode=max,scope=products
+      - name: Registrar digest
+        id: result
+        env:
+          EXISTING: ${{ steps.names.outputs.digest }}
+          CREATED: ${{ steps.build.outputs.digest }}
+        run: echo "digest=${EXISTING:-$CREATED}" >> "$GITHUB_OUTPUT"
+      - name: Criar tag e release idempotentes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.names.outputs.tag }}
+          RELEASE_VERSION: ${{ steps.names.outputs.version }}
+          IMAGE: ${{ steps.names.outputs.image }}
+          DIGEST: ${{ steps.result.outputs.digest }}
+          BRANCH: ${{ github.ref_name }}
+        shell: bash
+        run: |
+          if git ls-remote --exit-code --tags origin "refs/tags/$RELEASE_TAG" > /tmp/products-tag; then
+            existing_commit=$(cut -f1 /tmp/products-tag)
+            if [ "$existing_commit" != "$GITHUB_SHA" ]; then
+              echo 'Tag existente aponta para outro commit'; exit 1
+            fi
+          else
+            git tag "$RELEASE_TAG" "$GITHUB_SHA"
+            git push origin "refs/tags/$RELEASE_TAG"
+          fi
+          if ! gh release view "$RELEASE_TAG" > /dev/null 2>&1; then
+            printf 'Imagem: %s@%s\nCommit: %s\nPipeline: %s/%s/actions/runs/%s\n' "$IMAGE" "$DIGEST" "$GITHUB_SHA" "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" > /tmp/products-release.md
+            flags=()
+            if [ "$BRANCH" = develop ]; then flags+=(--prerelease); fi
+            gh release create "$RELEASE_TAG" --verify-tag --title "Produtos $RELEASE_VERSION" --notes-file /tmp/products-release.md "${flags[@]}"
+          fi
+  deploy:
+    needs: image
+    if: vars.PRODUCTS_DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    environment: ${{ github.ref == 'refs/heads/main' && 'HOMOL' || 'DEV' }}
+    env:
+      RENDER_API_KEY: ${{ secrets.PRODUCTS_RENDER_API_KEY }}
+      RENDER_SERVICE_ID: ${{ vars.PRODUCTS_RENDER_SERVICE_ID }}
+      APP_URL: ${{ vars.PRODUCTS_APP_URL }}
+      APP_ENV: ${{ github.ref == 'refs/heads/main' && 'homol' || 'dev' }}
+      IMAGE: ${{ needs.image.outputs.image }}@${{ needs.image.outputs.digest }}
+      EXPECTED_VERSION: ${{ needs.image.outputs.version }}
+      EXPECTED_COMMIT: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 scripts/deploy-products.py

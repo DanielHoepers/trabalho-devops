@@ -38,8 +38,8 @@ def api(path, token, payload=None):
 def deploy(service, image, token, timeout=900):
     if not re.fullmatch(r'srv-[a-z0-9]+', service):
         raise ValueError('ID de servico Render invalido')
-    if not re.fullmatch(r'ghcr\.io/[a-z0-9._/-]+@sha256:[0-9a-f]{64}', image):
-        raise ValueError('A imagem deve usar GHCR e digest sha256')
+    if not re.fullmatch(r'docker\.io/[a-z0-9]+(?:[._-][a-z0-9]+)*/[a-z0-9]+(?:[._-][a-z0-9]+)*@sha256:[0-9a-f]{64}', image):
+        raise ValueError('A imagem deve usar Docker Hub e digest sha256')
     path = '/services/' + service + '/deploys'
     started = api(path, token, {'imageUrl': image})
     deploy_id = started['id']

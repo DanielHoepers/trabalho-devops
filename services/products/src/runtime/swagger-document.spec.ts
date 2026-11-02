@@ -1,3 +1,4 @@
+import { OperationsModule } from '../operations/operations.module';
 import { Module } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -13,6 +14,7 @@ import { InternalProductsController } from '../modules/products/presentation/htt
 import { ProductsController } from '../modules/products/presentation/http/products.controller';
 
 @Module({
+  imports: [OperationsModule],
   controllers: [
     ProductsController,
     InternalProductsController,
@@ -70,6 +72,8 @@ describe('contrato OpenAPI do serviço de Produtos', () => {
         '/internal/v1/products/{id}': expect.objectContaining({
           get: expect.any(Object),
         }),
+        '/api/v1/products/version': expect.objectContaining({ get: expect.any(Object) }),
+        '/metrics': expect.objectContaining({ get: expect.objectContaining({ security: [{ metrics: [] }] }) }),
         '/health': expect.objectContaining({
           get: expect.any(Object),
         }),
@@ -78,6 +82,7 @@ describe('contrato OpenAPI do serviço de Produtos', () => {
 
     expect(document.paths['/api/v1/products/{id}']?.get).toBeUndefined();
 
+    expect(document.paths['/api/v1/products/version']?.get?.security).toBeUndefined();
     const listOperation = document.paths['/api/v1/products']?.get;
     expect(listOperation).toEqual(
       expect.objectContaining({

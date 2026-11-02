@@ -15,3 +15,6 @@ services/inventory/target/
 monitoring/inventory/.secrets/
 monitoring/inventory/targets/
 __pycache__/
+
+monitoring/products/targets/
+monitoring/products/.secrets/

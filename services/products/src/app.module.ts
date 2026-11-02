@@ -1,3 +1,4 @@
+import { OperationsModule } from './operations/operations.module';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
@@ -12,6 +13,7 @@ import { ProductsModule } from './modules/products/products.module';
     }),
     ScheduleModule.forRoot(),
     HealthModule,
+    OperationsModule,
     ProductsModule,
   ],
 })

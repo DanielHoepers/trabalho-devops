@@ -1,0 +1,7 @@
+apiVersion: 1
+providers:
+  - name: Products
+    folder: Products
+    type: file
+    options:
+      path: /var/lib/grafana/dashboards

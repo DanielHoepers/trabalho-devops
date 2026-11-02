@@ -56,6 +56,8 @@ services:
     environment:
       NODE_ENV: ${NODE_ENV:-development}
       PRODUCTS_PORT: 3000
+      METRICS_TOKEN: ${PRODUCTS_METRICS_TOKEN:-}
+      PRODUCTS_DB_SSL: ${PRODUCTS_DB_SSL:-false}
       SWAGGER_ENABLED: ${SWAGGER_ENABLED:-false}
       JWT_SECRET: ${JWT_SECRET:-change-me-in-development}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-3600}

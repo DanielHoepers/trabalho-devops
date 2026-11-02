@@ -41,7 +41,26 @@ ainda sem imagem publicada durante esta preparação.
 
 Criar products-dev e products-homol, imagem pública
 `docker.io/d2gtrabalhos/products-service`, plano gratuito. Runtime recebe PORT.
-Sem deploy automático paralelo no painel; CD usa API e digest aprovado.
+Selecionar **Existing Image** na criação dos dois serviços. Não conectar o
+repositório GitHub nem escolher branch no Render. Não usar On Commit ou After
+CI Checks Pass e não cadastrar automação de registry/deploy hook paralela.
+
+O fluxo de atualização autorizado é:
+
+1. Push/merge em develop ou main aciona GitHub Actions.
+2. Testes e Sonar Quality Gate aprovam a alteração.
+3. O pipeline publica a imagem da release no Docker Hub e obtém seu digest.
+4. O job de CD chama a API Render com `imageUrl` igual à imagem `@sha256:<digest>`.
+5. O CD aguarda o deploy específico e confere versão, commit e contratos HTTP.
+
+Alterar o repositório ou publicar uma tag não deve atualizar o Render fora
+desse fluxo. O primeiro deploy de provisionamento e rollback manual também
+usam digest aprovado. Esta configuração ainda precisa ser verificada nos
+serviços reais de Produtos antes de habilitar PRODUCTS_DEPLOY_ENABLED.
+
+A documentação oficial distingue serviços image-backed dos conectados ao Git
+e confirma que imagens novas em uma tag não provocam redeploy automático:
+[Deploy a Prebuilt Docker Image](https://render.com/docs/deploying-an-image).
 
 Pré-condição: confirmar capacidade gratuita dos provedores existentes para
 products_dev_write, products_dev_read, products_homol_write,

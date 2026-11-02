@@ -1,7 +1,7 @@
 # Especificação do Sistema de Delivery com Microsserviços
 
 **Status:** especificação de referência para implementação
-**Versão:** 2.16
+**Versão:** 2.17
 **Última atualização:** 2026-11-02
 **Idioma:** português
 **Objetivo:** orientar a construção, execução e validação de um sistema simples de delivery com foco em DevOps.
@@ -10,6 +10,7 @@
 
 | Versão | Data | Alteração |
 |---|---|---|
+| 2.17 | 2026-11-02 | Produtos image-backed no Render sem conexão Git; atualização exclusiva pelo CD via API com digest aprovado |
 | 2.16 | 2026-11-02 | Produtos T2: versão pública, PORT, TLS PostgreSQL, métricas protegidas, SonarCloud, releases Docker Hub e CD Render por digest; monitoramento local e configuração externa com evidências próprias |
 | 2.15 | 2026-10-31 | Alinhado Inventory ao enunciado T2: develop/DEV e main/HOMOL; homolog deixa de acionar o workflow; monitoramento ainda preparado e CD depende de configuração externa |
 | 2.14 | 2026-10-31 | CI do Inventory separa develop/DEV, homolog/HOMOL e main/versão aprovada; main não publica nem implanta; deploy condicionado à habilitação futura por Variable |
@@ -1654,6 +1655,15 @@ Rollback manual para digest anterior aprovado; sem apagar dados.
 ### 21.3 Topologia, configuração e evidências
 
 Render image-backed products-dev/products-homol, sem Nginx dedicado, com PORT.
+Criar pela opção **Existing Image**, sem conectar repositório ou branch Git ao
+serviço. Não configurar deploy por commit, After CI Checks Pass, automação do
+registry ou webhook paralelo. GitHub Actions é o responsável pela atualização:
+qualidade aprovada → imagem por release no Docker Hub → API Render com
+`imageUrl` fixada em `@sha256:<digest>` → validação HTTP da versão/commit.
+Push ou merge dispara o pipeline, nunca um deploy direto do Render. O deploy
+inicial de provisionamento e o rollback manual são exceções operacionais
+explícitas; também devem selecionar um digest conhecido. A publicação de uma
+nova tag no Docker Hub, isoladamente, não autoriza atualização do serviço.
 Rota `/internal/v1/products/:id` acessível diretamente requer token interno.
 Pedidos do mesmo ambiente configura PRODUCTS_SERVICE_URL com essa origem HTTPS.
 Não há chamada Produtos → Inventory. Compose local mantém o bloqueio interno.

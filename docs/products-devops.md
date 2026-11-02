@@ -75,8 +75,8 @@ gratuitas exclusivas de Produtos (uma por ambiente), cada uma com seu usuário
 e vhost fornecidos pelo provedor. Não compartilhar credenciais ou filas do
 Inventory e não aumentar o plano para contornar essa limitação.
 [Limites oficiais do CloudAMQP](https://www.cloudamqp.com/docs/faq/).
-O login da conta CloudAMQP e a criação da chave API Render estão pendentes
-das autorizações específicas solicitadas no chat.
+O login da conta CloudAMQP está pendente da autorização específica solicitada
+no chat. A chave API Render própria do CD já foi criada e cadastrada no GitHub.
 
 Variáveis de runtime: APP_ENV, NODE_ENV, SWAGGER_ENABLED, JWT_SECRET,
 INTERNAL_SERVICE_TOKEN, METRICS_TOKEN, PRODUCTS_DB_SSL,
@@ -161,3 +161,16 @@ coleta de métricas dos ambientes cloud.
   recursos físicos, com dados e credenciais separados.
 - Mensageria e Render de Produtos ainda em preparação; não representam CD
   completo. Não promover HOMOL antes da validação DEV.
+
+
+## Acesso do CD preparado em 02/11/2026
+
+- Chave Render `products-github-actions` criada após autorização explícita;
+  acesso à API validado, sem registrar o valor. O formulário não oferece
+  restrição por serviço; o CD seleciona apenas os IDs de Produtos.
+- Secret `PRODUCTS_RENDER_API_KEY` confirmado nos Environments DEV e HOMOL.
+- DEV aceita exclusivamente a branch develop; HOMOL exclusivamente main,
+  sem regras de tags. Ainda faltam IDs/URLs de Produtos e habilitação do CD.
+- Consulta à API confirmou Inventory DEV/HOMOL como serviços image-backed,
+  sem repositório conectado; nenhuma configuração de Inventory foi alterada.
+- Nenhum deploy de Produtos iniciado nesta etapa; mensageria própria pendente.

@@ -109,3 +109,22 @@ Não registrar tokens, URLs com credenciais nem chaves de deploy.
 
 As evidências locais não comprovam publicação de imagem, deploy remoto nem
 coleta de métricas dos ambientes cloud.
+
+
+## Avanço remoto em 02/11/2026
+
+- Feature publicada: f9d6575; pipeline Products 41514778788 aprovado.
+- PR #19 feature/products-devops → develop: checks Products 41516706006 e
+  Inventory 41516705866 aprovados; integrado em e65fd94.
+- Develop alinhada previamente à main ef796c2, por fast-forward.
+- Secrets PRODUCTS_SONAR_TOKEN e PRODUCTS_DOCKERHUB_TOKEN cadastrados; token
+  Docker com leitura/escrita e validade de 30 dias, sem permissão de exclusão.
+- Primeira prerelease: products-v0.2.0-dev.3; publicação por pipeline.
+- Quatro bancos e usuários próprios provisionados no PostgreSQL gratuito
+  existente: products_dev_write, products_dev_read, products_homol_write,
+  products_homol_read. Conexões TLS verificadas; CONNECT público revogado nesses
+  bancos. Nenhuma tabela/banco Inventory foi acessado ou alterado.
+- A instância gratuita expira em 30/11/2026; os bancos próprios compartilham
+  recursos físicos, com dados e credenciais separados.
+- Mensageria e Render de Produtos ainda em preparação; não representam CD
+  completo. Não promover HOMOL antes da validação DEV.

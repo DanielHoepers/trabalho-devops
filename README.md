@@ -2,6 +2,9 @@
 
 Sistema de delivery com microsserviços. Auth, Produtos, Estoque e Pedidos estão implementados.
 
+TESTE
+
+
 ## Documentação
 
 - [T2 — DevOps do Estoque](docs/inventory-devops.md): CI/CD, cloud, secrets, Git Flow e entrega.

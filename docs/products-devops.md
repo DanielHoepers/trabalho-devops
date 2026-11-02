@@ -34,8 +34,8 @@ Inicializar main antes das demais análises; configurar referências do Sonar se
 publicar/deployar uma main incompleta. Identificadores públicos em Variables,
 token em Secrets; não documentar seu valor.
 
-Docker Hub: repositório público `d2gtrabalhos/products-service` criado em 02/11/2026,
-ainda sem imagem publicada durante esta preparação.
+Docker Hub: repositório público `d2gtrabalhos/products-service` criado em 02/11/2026;
+primeira imagem publicada: `0.2.0-dev.3`, conforme as evidências abaixo.
 
 ## Render e dependências
 
@@ -67,6 +67,16 @@ products_dev_write, products_dev_read, products_homol_write,
 products_homol_read e mensageria própria por ambiente. Não usar bancos do
 Inventory. Se não houver capacidade/permissão gratuita, registrar bloqueio
 antes de criar recursos. Não contratar plano pago.
+
+No CloudAMQP gratuito, não é possível administrar usuários ou criar vhosts
+adicionais. A tentativa com as credenciais existentes retornou 403 em DEV e
+401 em HOMOL; nenhum vhost de Produtos foi criado. Provisionar duas instâncias
+gratuitas exclusivas de Produtos (uma por ambiente), cada uma com seu usuário
+e vhost fornecidos pelo provedor. Não compartilhar credenciais ou filas do
+Inventory e não aumentar o plano para contornar essa limitação.
+[Limites oficiais do CloudAMQP](https://www.cloudamqp.com/docs/faq/).
+O login da conta CloudAMQP e a criação da chave API Render estão pendentes
+das autorizações específicas solicitadas no chat.
 
 Variáveis de runtime: APP_ENV, NODE_ENV, SWAGGER_ENABLED, JWT_SECRET,
 INTERNAL_SERVICE_TOKEN, METRICS_TOKEN, PRODUCTS_DB_SSL,
@@ -138,7 +148,11 @@ coleta de métricas dos ambientes cloud.
 - Develop alinhada previamente à main ef796c2, por fast-forward.
 - Secrets PRODUCTS_SONAR_TOKEN e PRODUCTS_DOCKERHUB_TOKEN cadastrados; token
   Docker com leitura/escrita e validade de 30 dias, sem permissão de exclusão.
-- Primeira prerelease: products-v0.2.0-dev.3; publicação por pipeline.
+- Primeira prerelease: [products-v0.2.0-dev.3](https://github.com/guilhermeschr/trabalho-devops/releases/tag/products-v0.2.0-dev.3);
+  publicação pelo [pipeline DEV aprovado](https://github.com/guilhermeschr/trabalho-devops/actions/runs/41520222482).
+  Digest: `sha256:85064146ac752acae8c8bae233bb402e396df1479d05f892c73a1f29e49f9f09`.
+- Formulário Render de Produtos DEV preparado com Existing Image e esse digest;
+  plano Free confirmado ($0/mês). Serviço ainda não criado nem implantado.
 - Quatro bancos e usuários próprios provisionados no PostgreSQL gratuito
   existente: products_dev_write, products_dev_read, products_homol_write,
   products_homol_read. Conexões TLS verificadas; CONNECT público revogado nesses

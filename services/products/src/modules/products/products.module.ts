@@ -1,3 +1,4 @@
+import { databaseTls } from '../../operations/runtime-config';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
@@ -51,6 +52,7 @@ import { ProductsController } from './presentation/http/products.controller';
       useFactory: (configService: ConfigService) => ({
         name: 'productsWrite',
         type: 'postgres' as const,
+        ssl: databaseTls(configService.get<string>('PRODUCTS_DB_SSL')),
         host: configService.get<string>(
           'PRODUCTS_WRITE_DB_HOST',
           'localhost',
@@ -81,6 +83,7 @@ import { ProductsController } from './presentation/http/products.controller';
       useFactory: (configService: ConfigService) => ({
         name: 'productsRead',
         type: 'postgres' as const,
+        ssl: databaseTls(configService.get<string>('PRODUCTS_DB_SSL')),
         host: configService.get<string>(
           'PRODUCTS_READ_DB_HOST',
           'localhost',

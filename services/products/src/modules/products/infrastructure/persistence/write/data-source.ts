@@ -1,3 +1,4 @@
+import { databaseTls } from '../../../../../operations/runtime-config';
 import { DataSource } from 'typeorm';
 import { OutboxEventOrmEntity } from './entities/outbox-event.orm-entity';
 import { ProductWriteOrmEntity } from './entities/product-write.orm-entity';
@@ -5,6 +6,7 @@ import { CreateProductsWriteTables1710000000000 } from './migrations/17100000000
 
 export default new DataSource({
   type: 'postgres',
+  ssl: databaseTls(process.env.PRODUCTS_DB_SSL),
   host: process.env.PRODUCTS_WRITE_DB_HOST ?? 'localhost',
   port: Number(process.env.PRODUCTS_WRITE_DB_PORT ?? 5432),
   database: process.env.PRODUCTS_WRITE_DB_NAME ?? 'products_write',

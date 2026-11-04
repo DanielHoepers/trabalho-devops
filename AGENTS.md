@@ -62,7 +62,7 @@ Quando código e especificação descrevem o mesmo comportamento, prefira coloc�
 ## 4. Padrões arquiteturais que não podem ser quebrados
 
 - O Nginx é o gateway das rotas externas.
-- Rotas com prefixo `/internal/` são exclusivamente internas e não podem ser expostas pelo Nginx.
+- Rotas com prefixo `/internal/` não podem ser expostas pelo Nginx. No Render cloud de Estoque e Produtos, o acesso HTTPS direto é permitido exclusivamente com `X-Internal-Token`, conforme as seções 20 e 21 da especificação.
 - A comunicação entre microsserviços é REST síncrona.
 - RabbitMQ é usado para atualizar os modelos de leitura do CQRS.
 - Produtos e Estoque possuem bancos de escrita e leitura separados.
@@ -192,10 +192,10 @@ Não use `git add -A` ou `git add .` quando isso puder incluir alterações não
 
 ## 8. Padrão de branches
 
-Para o T2 do Inventory, seguir o enunciado: `develop` representa DEV e
+Para o T2 de Inventory e Produtos, seguir o enunciado: `develop` representa DEV e
 `main` representa HOMOL. Não usar outra branch como destino de homologação.
 Novas funcionalidades usam `feature/<descricao-em-minusculas>`.
-Esse mapeamento aplica-se ao workflow do Inventory; não altera os demais serviços.
+Esse mapeamento aplica-se aos workflows de Inventory e Produtos; não altera os demais serviços.
 Use descrição específica, sem espaços ou acentos. Não use `codex/`.
 Não renomeie branches existentes nem faça integração sem solicitação.
 

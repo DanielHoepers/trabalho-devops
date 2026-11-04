@@ -155,6 +155,13 @@ async function main() {
     'Header X-Internal-Token ausente na rota interna',
   );
 
+  const version = getOperation(document, '/api/v1/products/version', 'get');
+  assert(!version.security?.length, 'Versão deve ser pública');
+  assertResponses(version, '/api/v1/products/version', 'get', ['200']);
+  const metrics = getOperation(document, '/metrics', 'get');
+  assert(metrics.security?.some(security => security.metrics), 'Métricas devem exigir token');
+  const ui = await fetch(`${baseUrl}/docs`);
+  assert(ui.status === 200 && (await ui.text()).includes('swagger-ui'), 'Interface Swagger indisponível');
   const health = getOperation(document, '/health', 'get');
   assertTag(health, '/health', 'get', 'Infraestrutura');
   assertResponses(health, '/health', 'get', ['200']);

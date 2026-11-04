@@ -1,8 +1,8 @@
 # Especificação do Sistema de Delivery com Microsserviços
 
 **Status:** especificação de referência para implementação
-**Versão:** 2.18
-**Última atualização:** 2026-11-02
+**Versão:** 2.19
+**Última atualização:** 2026-11-03
 **Idioma:** português
 **Objetivo:** orientar a construção, execução e validação de um sistema simples de delivery com foco em DevOps.
 
@@ -10,9 +10,10 @@
 
 | Versão | Data | Alteração |
 |---|---|---|
+| 2.19 | 2026-11-03 | Integradas as atualizações de DevOps de Inventory e Produtos, preservando as configurações independentes dos dois serviços |
 | 2.18 | 2026-11-02 | Migrada configuração de publicação do Inventory para Docker Hub; credencial própria em Secrets, usuário em Variables e deploy restrito a digest docker.io; aplicação e demais serviços preservados |
-| 2.17 | 2026-11-01 | Corrigida negociação HTTP do verificador de deploy: /docs solicita HTML e /docs-json solicita JSON; validações por ambiente preservadas |
-| 2.16 | 2026-11-01 | Preparado CI/CD do Inventory no fork com Environments próprios; imagem OCI identifica repositório, commit e versão; configurações administrativas não são transferidas por PR |
+| 2.17 | 2026-11-01 / 2026-11-02 | Inventory: corrigida negociação HTTP do verificador de deploy: /docs solicita HTML e /docs-json solicita JSON; validações por ambiente preservadas. Produtos: image-backed no Render sem conexão Git; atualização exclusiva pelo CD via API com digest aprovado |
+| 2.16 | 2026-11-01 / 2026-11-02 | Inventory: preparado CI/CD no fork com Environments próprios; imagem OCI identifica repositório, commit e versão; configurações administrativas não são transferidas por PR. Produtos T2: versão pública, PORT, TLS PostgreSQL, métricas protegidas, SonarCloud, releases Docker Hub e CD Render por digest; monitoramento local e configuração externa com evidências próprias |
 | 2.15 | 2026-10-31 | Alinhado Inventory ao enunciado T2: develop/DEV e main/HOMOL; homolog deixa de acionar o workflow; monitoramento ainda preparado e CD depende de configuração externa |
 | 2.14 | 2026-10-31 | CI do Inventory separa develop/DEV, homolog/HOMOL e main/versão aprovada; main não publica nem implanta; deploy condicionado à habilitação futura por Variable |
 | 2.13 | 2026-10-28 | Somente Estoque cloud: Spring público no Render sem Nginx dedicado; rotas acessíveis diretamente preservando JWT, token interno e métricas; CD de uma imagem; Compose e demais serviços preservados |
@@ -67,7 +68,7 @@ Não fazem parte desta versão:
 - Frontend.
 - Autorização baseada em múltiplos perfis de usuário.
 
-O T2 inclui deploy em nuvem e GitHub Actions para Estoque (seção 20).
+O T2 inclui deploy em nuvem e GitHub Actions para Estoque (seção 20) e Produtos (seção 21).
 
 ## 2. Arquitetura geral
 
@@ -168,6 +169,7 @@ Content-Type: application/json
 | POST | /api/v1/products | Produtos | JWT | Criar produto |
 | PUT | /api/v1/products/:id | Produtos | JWT | Editar produto |
 | GET | /api/v1/products | Produtos | JWT | Consultar todos os produtos |
+| GET | /api/v1/products/version | Produtos | Pública | Consultar identidade da imagem |
 | POST | /api/v1/inventory | Estoque | JWT | Criar ou adicionar estoque |
 | GET | /api/v1/inventory/:productId | Estoque | JWT | Consultar estoque |
 | POST | /api/v1/orders | Pedidos | JWT | Criar pedido |
@@ -499,9 +501,10 @@ Regras:
 ## 4. Rotas internas
 
 No Compose local, as rotas internas não deverão ser configuradas no Nginx
-e não poderão ser chamadas por clientes externos. Somente no Estoque cloud,
-o débito fica acessível pela URL pública direta, com `X-Internal-Token`
-obrigatório (seção 20). Produtos e Pedidos não são alterados por essa exceção.
+e não poderão ser chamadas por clientes externos. Em Estoque e Produtos cloud,
+as rotas internas ficam acessíveis pela URL HTTPS direta, com `X-Internal-Token`
+obrigatório (seções 20 e 21). O prefixo permanece por compatibilidade;
+nessa topologia não há isolamento de rede HTTP. Pedidos usa URLs por ambiente.
 
 ### 4.1 Consultar produto internamente
 
@@ -883,7 +886,7 @@ todos os containers é 3000.
 | Comuns | `NODE_ENV`, `SWAGGER_ENABLED`, `JWT_SECRET`, `INTERNAL_SERVICE_TOKEN` |
 | Gateway | `PRODUCTS_PUBLIC_PORT` (porta HTTP publicada pelo Nginx, padrão 8080) |
 | RabbitMQ (Produtos e Estoque) | `RABBITMQ_URL`, `RABBITMQ_EXCHANGE` |
-| Produtos | `PRODUCTS_PORT`, `PRODUCTS_WRITE_DB_{HOST,PORT,NAME,USER,PASSWORD}`, `PRODUCTS_READ_DB_{HOST,PORT,NAME,USER,PASSWORD}`, `RABBITMQ_PRODUCTS_QUEUE` |
+| Produtos | `PORT`, `APP_ENV`, `METRICS_TOKEN`, `PRODUCTS_DB_SSL`, `PRODUCTS_PORT`, `PRODUCTS_WRITE_DB_{HOST,PORT,NAME,USER,PASSWORD}`, `PRODUCTS_READ_DB_{HOST,PORT,NAME,USER,PASSWORD}`, `RABBITMQ_PRODUCTS_QUEUE` |
 | Estoque | `PORT`, `APP_ENV`, `METRICS_TOKEN`, `INVENTORY_PORT`, `INVENTORY_WRITE_DB_{HOST,PORT,NAME,USER,PASSWORD}`, `INVENTORY_READ_DB_{HOST,PORT,NAME,USER,PASSWORD}`, `RABBITMQ_INVENTORY_QUEUE` |
 | Auth | `AUTH_PORT`, `AUTH_DB_{HOST,PORT,NAME,USER,PASSWORD}`, `JWT_EXPIRES_IN` |
 | Pedidos | `ORDERS_PORT`, `ORDERS_DB_{HOST,PORT,NAME,USER,PASSWORD}`, `PRODUCTS_SERVICE_URL`, `INVENTORY_SERVICE_URL`, `ORDERS_HTTP_TIMEOUT_MS` |
@@ -925,6 +928,7 @@ Na implementação atual, "/api/v1/auth/" é encaminhado para "auth-service",
 "/api/v1/orders" e "/api/v1/orders/" para "orders-service" e
 "/api/v1/products" deverá ser encaminhado para
 "products-service" para as operações de criação e consulta. O caminho
+"/api/v1/products/version" é encaminhada como rota pública de versão.
 "/api/v1/products/:id" deverá ser encaminhado somente para a operação PUT de
 edição. Nenhuma rota "/internal/" deverá ser encaminhada.
 
@@ -986,7 +990,7 @@ O serviço de Produtos deverá disponibilizar, no ambiente local, os endpoints:
 ~~~
 
 O Swagger deverá ser habilitado somente quando `SWAGGER_ENABLED=true` e
-`NODE_ENV` não for `production`. O Compose deverá usar `false` como padrão
+`NODE_ENV` não for `production`. Em Produtos, `APP_ENV=homol` também bloqueia Swagger. O Compose deverá usar `false` como padrão
 seguro quando a variável não for informada.
 
 Após alterar `.env` ou a configuração do Compose, os containers deverão ser
@@ -1009,6 +1013,8 @@ O documento deverá conter todas as rotas implementadas no serviço:
 |---|---|---|
 | POST | /api/v1/products | Produtos |
 | GET | /api/v1/products | Produtos |
+| GET | /api/v1/products/version | Produtos |
+| GET | /metrics | Produtos direto; token exclusivo, bloqueado no gateway local |
 | PUT | /api/v1/products/{id} | Produtos |
 | GET | /internal/v1/products/{id} | Produtos internos |
 | GET | /health | Infraestrutura |
@@ -1601,3 +1607,96 @@ Provisionamento, secrets, plano Sonar, URLs, dashboards com dados reais e
 pipeline remoto ainda devem ser configurados/validados; não estão cobertos
 pelas evidências históricas da seção 14. Instruções e checklist de entrega:
 [DevOps do Estoque](inventory-devops.md).
+
+
+## 21. T2 de Produtos — versão 0.2.0
+
+### 21.1 Contratos operacionais
+
+`GET /api/v1/products/version`: HTTP 200 sem JWT, no gateway e no Render:
+
+~~~json
+{"service":"products-service","version":"0.2.0","commit":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","environment":"homol"}
+~~~
+
+`version` e `commit` são gravados no build em `dist/build-info.json`, nunca
+lidos de overrides de runtime. Builds locais usam versão do manifesto e commit
+`local`. Cloud exige o arquivo. `environment` vem de APP_ENV (local/dev/homol).
+Essa rota não acessa bancos e não altera os contratos de negócio.
+
+`GET /metrics`: HTTP 200 text/plain Prometheus com Bearer METRICS_TOKEN;
+401 quando ausente/incorreto. Token vazio desabilita acesso. Token exclusivo,
+separado de JWT e token interno. Documentada no OpenAPI com esquema `metrics`.
+O Nginx local não encaminha métricas. Registro usa prom-client 15.1.3, contador
+http_requests_total, histogramas http_request_duration_seconds e métricas do
+processo Node. Labels: service, environment, method, route, status; rotas
+conhecidas usam padrão e as demais `unmatched`, sem IDs ou query strings.
+products_build_info identifica version e commit.
+
+Porta: PORT → PRODUCTS_PORT → 3000, inteiro de 1 a 65535. Em cloud, JWT_SECRET,
+INTERNAL_SERVICE_TOKEN, METRICS_TOKEN, RABBITMQ_URL e credenciais dos dois bancos
+são obrigatórios; valores fictícios conhecidos são rejeitados, incluindo
+change-me-internal-development. Na cloud, RABBITMQ_URL exige AMQPS, usuário
+e senha própria; credenciais públicas do Compose são rejeitadas. PRODUCTS_DB_SSL=true
+habilita TLS PostgreSQL com validação de certificado nas duas conexões e no CLI
+de migrações. O padrão local é false. Nunca usar rejectUnauthorized=false.
+
+DEV: APP_ENV=dev, NODE_ENV=development, SWAGGER_ENABLED=true.
+HOMOL: APP_ENV=homol, NODE_ENV=production, SWAGGER_ENABLED=false; combinação
+incompatível impede startup. A imagem usa dependências de runtime e código
+compilado nos dois ambientes.
+
+### 21.2 Releases e CI/CD
+
+Workflow independente `.github/workflows/products.yml`: testes e limiar Jest
+50% em todas as quatro métricas, tipagem, build, contrato Swagger HTTP, testes
+Python, validação Prometheus e SonarCloud com LCOV e Quality Gate obrigatório.
+Features/PRs/execuções manuais validam sem publicar; forks e Dependabot não
+recebem secrets Sonar/deploy. Isso não comprova Quality Gate nesses PRs.
+
+Push em develop publica X.Y.Z-dev.<run_number>; main publica X.Y.Z, base no
+package.json de Produtos, inicialmente 0.2.0. Registry público:
+`docker.io/d2gtrabalhos/products-service`. Tags Git prefixadas products-v;
+releases DEV são prereleases. Imagens linux/amd64, labels OCI version/revision,
+sem latest no CD. Se imagem já existir, reutilizar digest apenas quando o
+commit coincidir; outro commit com a mesma versão bloqueia publicação.
+Retentativa reutiliza imagem; tag Git existente deve apontar ao mesmo commit.
+
+Deploy depende de PRODUCTS_DEPLOY_ENABLED=true e Environment DEV/HOMOL por
+branch. Script valida origem HTTPS, digest, deploy específico live, health,
+identidade exata, 401 em negócio/métricas, 403 na rota interna sem token,
+Swagger UI/JSON em DEV e ausência em HOMOL. Timeout/falhas reprovam pipeline.
+Rollback manual para digest anterior aprovado; sem apagar dados.
+
+### 21.3 Topologia, configuração e evidências
+
+Render image-backed products-dev/products-homol, sem Nginx dedicado, com PORT.
+Criar pela opção **Existing Image**, sem conectar repositório ou branch Git ao
+serviço. Não configurar deploy por commit, After CI Checks Pass, automação do
+registry ou webhook paralelo. GitHub Actions é o responsável pela atualização:
+qualidade aprovada → imagem por release no Docker Hub → API Render com
+`imageUrl` fixada em `@sha256:<digest>` → validação HTTP da versão/commit.
+Push ou merge dispara o pipeline, nunca um deploy direto do Render. O deploy
+inicial de provisionamento e o rollback manual são exceções operacionais
+explícitas; também devem selecionar um digest conhecido. A publicação de uma
+nova tag no Docker Hub, isoladamente, não autoriza atualização do serviço.
+Rota `/internal/v1/products/:id` acessível diretamente requer token interno.
+Pedidos do mesmo ambiente configura PRODUCTS_SERVICE_URL com essa origem HTTPS.
+Não há chamada Produtos → Inventory. Compose local mantém o bloqueio interno.
+
+Quatro bancos lógicos de Produtos (write/read em DEV/HOMOL) e vhosts/credenciais
+RabbitMQ por ambiente. Provedores gratuitos existentes podem ser aproveitados
+apenas com capacidade e permissões confirmadas; nunca compartilhar tabelas,
+filas ou acessar bancos do Inventory. Utilizar TLS/AMQPS nos acessos externos.
+
+Secrets/Variables, preparação gratuita, monitoramento e evidências:
+`docs/products-devops.md`. Infraestrutura não é considerada provisionada por
+existirem estes arquivos. Critérios históricos da seção 14 não comprovam T2.
+
+- [ ] SonarCloud Produtos OSS, análises main/develop e Quality Gate reais.
+- [ ] Docker Hub com imagem por release e digest registrado.
+- [ ] CD automático DEV/HOMOL com identidade correta.
+- [ ] Dados e mensageria isolados; fluxo CQRS validado nos dois ambientes.
+- [ ] Swagger 200 UI/JSON em DEV e 404 em HOMOL.
+- [ ] Prometheus com os dois targets UP e Grafana com tráfego real.
+- [ ] HOMOL na release estável e DEV na próxima versão PATCH.

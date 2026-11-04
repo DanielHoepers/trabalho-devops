@@ -1,3 +1,4 @@
+import { databaseTls } from '../../../../../operations/runtime-config';
 import { DataSource } from 'typeorm';
 import { ProductReadOrmEntity } from './entities/product-read.orm-entity';
 import { ProcessedEventOrmEntity } from './entities/processed-event.orm-entity';
@@ -5,6 +6,7 @@ import { CreateProductsReadTables1710000000001 } from './migrations/171000000000
 
 export default new DataSource({
   type: 'postgres',
+  ssl: databaseTls(process.env.PRODUCTS_DB_SSL),
   host: process.env.PRODUCTS_READ_DB_HOST ?? 'localhost',
   port: Number(process.env.PRODUCTS_READ_DB_PORT ?? 5432),
   database: process.env.PRODUCTS_READ_DB_NAME ?? 'products_read',

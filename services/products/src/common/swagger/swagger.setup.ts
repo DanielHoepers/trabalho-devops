@@ -10,7 +10,7 @@ export function isSwaggerEnabled(configService: ConfigService): boolean {
     .get<string>('NODE_ENV', 'development')
     .toLowerCase();
 
-  return enabled === 'true' && environment !== 'production';
+  return enabled === 'true' && environment !== 'production' && configService.get<string>('APP_ENV') !== 'homol';
 }
 
 export function setupSwagger(
@@ -38,6 +38,7 @@ export function setupSwagger(
       },
       'jwt',
     )
+    .addBearerAuth({ type: 'http', scheme: 'bearer' }, 'metrics')
     .build();
 
   const documentFactory = () =>

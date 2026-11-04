@@ -73,6 +73,7 @@ jobs:
         env:
           REPOSITORY: ${{ github.repository }}
           DOCKERHUB_USERNAME: ${{ vars.INVENTORY_DOCKERHUB_USERNAME }}
+          PUBLISH_IMAGE: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop') }}
           BRANCH: ${{ github.ref_name }}
           SHA: ${{ github.sha }}
         run: |
@@ -81,6 +82,8 @@ jobs:
           if not re.fullmatch(r'(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)', version):
               raise SystemExit('Use uma versao SemVer X.Y.Z no pom.xml')
           username = os.environ['DOCKERHUB_USERNAME']
+          if not username and os.environ['PUBLISH_IMAGE'] != 'true':
+              username = 'local'
           if not re.fullmatch(r'[a-z0-9]+(?:[._-][a-z0-9]+)*', username):
               raise SystemExit('Configure INVENTORY_DOCKERHUB_USERNAME nas Variables do repositorio')
           repository = os.environ['REPOSITORY'].lower().split('/')[1]

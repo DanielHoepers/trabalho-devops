@@ -47,3 +47,13 @@ referências inválidas; aceita somente Docker Hub com namespace/repositório e
 digest sha256. Os testes da negociação HTML/JSON e dos contratos DEV/HOMOL
 continuam obrigatórios. Resultados remotos devem ser registrados somente após
 a publicação e os deploys reais.
+
+## Transferência para o original
+
+O repositório original mantém os Secrets Sonar existentes da conta do responsável
+pelo Inventory; validar a etapa Sonar e Quality Gate, não somente o job quality.
+O Secret `INVENTORY_RENDER_API_KEY` pode ficar no nível do repositório quando a
+mesma chave atende DEV/HOMOL; os IDs e URLs permanecem nas Variables dos respectivos
+Environments. Credenciais de outros microsserviços não são reutilizadas.
+Desabilitar `INVENTORY_DEPLOY_ENABLED` no fork antes de habilitar no original.
+Preservar as seções e o histórico dos demais serviços ao resolver conflitos.

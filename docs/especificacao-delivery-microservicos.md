@@ -1,7 +1,7 @@
 # Especificação do Sistema de Delivery com Microsserviços
 
 **Status:** especificação de referência para implementação
-**Versão:** 2.20
+**Versão:** 2.21
 **Última atualização:** 2026-11-03
 **Idioma:** português
 **Objetivo:** orientar a construção, execução e validação de um sistema simples de delivery com foco em DevOps.
@@ -10,11 +10,9 @@
 
 | Versão | Data | Alteração |
 |---|---|---|
-| 2.20 | 2026-11-03 | Inventory: build de validação sem publicação aceita namespace local quando a Variable Docker Hub não está disponível; pushes de develop/main continuam exigindo usuário e token próprios; Sonar e demais serviços preservados |
-| 2.19 | 2026-11-03 | Integradas as atualizações de DevOps de Inventory e Produtos, preservando as configurações independentes dos dois serviços |
-| 2.18 | 2026-11-02 | Migrada configuração de publicação do Inventory para Docker Hub; credencial própria em Secrets, usuário em Variables e deploy restrito a digest docker.io; aplicação e demais serviços preservados |
-| 2.17 | 2026-11-01 / 2026-11-02 | Inventory: corrigida negociação HTTP do verificador de deploy: /docs solicita HTML e /docs-json solicita JSON; validações por ambiente preservadas. Produtos: image-backed no Render sem conexão Git; atualização exclusiva pelo CD via API com digest aprovado |
-| 2.16 | 2026-11-01 / 2026-11-02 | Inventory: preparado CI/CD no fork com Environments próprios; imagem OCI identifica repositório, commit e versão; configurações administrativas não são transferidas por PR. Produtos T2: versão pública, PORT, TLS PostgreSQL, métricas protegidas, SonarCloud, releases Docker Hub e CD Render por digest; monitoramento local e configuração externa com evidências próprias |
+| 2.21 | 2026-11-03 | Inventory: consolidadas migração Docker Hub, negociação HTML/JSON do deploy e validação de PRs sem credenciais; preservadas integralmente as seções e o histórico dos demais serviços do original |
+| 2.17 | 2026-11-02 | Produtos image-backed no Render sem conexão Git; atualização exclusiva pelo CD via API com digest aprovado |
+| 2.16 | 2026-11-02 | Produtos T2: versão pública, PORT, TLS PostgreSQL, métricas protegidas, SonarCloud, releases Docker Hub e CD Render por digest; monitoramento local e configuração externa com evidências próprias |
 | 2.15 | 2026-10-31 | Alinhado Inventory ao enunciado T2: develop/DEV e main/HOMOL; homolog deixa de acionar o workflow; monitoramento ainda preparado e CD depende de configuração externa |
 | 2.14 | 2026-10-31 | CI do Inventory separa develop/DEV, homolog/HOMOL e main/versão aprovada; main não publica nem implanta; deploy condicionado à habilitação futura por Variable |
 | 2.13 | 2026-10-28 | Somente Estoque cloud: Spring público no Render sem Nginx dedicado; rotas acessíveis diretamente preservando JWT, token interno e métricas; CD de uma imagem; Compose e demais serviços preservados |

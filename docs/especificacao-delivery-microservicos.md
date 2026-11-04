@@ -1,7 +1,7 @@
 # Especificação do Sistema de Delivery com Microsserviços
 
 **Status:** especificação de referência para implementação
-**Versão:** 2.19
+**Versão:** 2.20
 **Última atualização:** 2026-11-03
 **Idioma:** português
 **Objetivo:** orientar a construção, execução e validação de um sistema simples de delivery com foco em DevOps.
@@ -10,6 +10,7 @@
 
 | Versão | Data | Alteração |
 |---|---|---|
+| 2.20 | 2026-11-03 | Inventory: build de validação sem publicação aceita namespace local quando a Variable Docker Hub não está disponível; pushes de develop/main continuam exigindo usuário e token próprios; Sonar e demais serviços preservados |
 | 2.19 | 2026-11-03 | Integradas as atualizações de DevOps de Inventory e Produtos, preservando as configurações independentes dos dois serviços |
 | 2.18 | 2026-11-02 | Migrada configuração de publicação do Inventory para Docker Hub; credencial própria em Secrets, usuário em Variables e deploy restrito a digest docker.io; aplicação e demais serviços preservados |
 | 2.17 | 2026-11-01 / 2026-11-02 | Inventory: corrigida negociação HTTP do verificador de deploy: /docs solicita HTML e /docs-json solicita JSON; validações por ambiente preservadas. Produtos: image-backed no Render sem conexão Git; atualização exclusiva pelo CD via API com digest aprovado |
@@ -1565,7 +1566,10 @@ para Environment DEV e main para HOMOL, condicionado também à Variable de
 repositório `INVENTORY_DEPLOY_ENABLED=true`. Sem essa habilitação, o deploy
 fica pulado para tratar a hospedagem em uma etapa posterior. PRs de forks
 executam os testes sem acesso aos secrets e não são considerados evidência de
-Sonar aprovado. O CD consulta o deploy específico na API Render até `live` e
+Sonar aprovado. Builds que não publicam usam namespace `local` quando a Variable
+Docker Hub não está disponível; isso não autentica nem publica no registro.
+Pushes de develop/main continuam exigindo usuário válido e token de publicação.
+O CD consulta o deploy específico na API Render até `live` e
 verifica readiness, JWT, token interno, métricas e Swagger na URL pública.
 O verificador solicita `Accept: text/html` para `/docs` e
 `Accept: application/json` para `/docs-json`, preservando os códigos esperados

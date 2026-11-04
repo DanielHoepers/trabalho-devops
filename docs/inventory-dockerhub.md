@@ -15,6 +15,10 @@ preservados. Nenhum serviço dos demais integrantes é alterado.
 - Tags: `X.Y.Z-dev-<sha>` e `X.Y.Z-homol-<sha>`; CD usa digest imutável.
 - Jobs, gatilhos, Quality Gate e mapeamento develop/DEV e main/HOMOL preservados.
 - A permissão GitHub packages:write não é mais necessária e foi removida.
+- Builds de PRs, features e execuções manuais não publicam. Se a Variable de
+  usuário não estiver disponível, usam `docker.io/local/<repositorio>-inventory`
+  somente como nome do build. Pushes de develop/main rejeitam usuário vazio;
+  a autenticação Docker Hub e o Quality Gate continuam obrigatórios.
 
 ## Sequência de migração
 
